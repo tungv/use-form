@@ -10,6 +10,16 @@ function MyForm({ onSubmit }: { onSubmit?: (values: any) => void }) {
       username: "",
       password: "",
     },
+    validate(values, errors) {
+      if (!values.username) {
+        errors.username = "Username Required";
+      }
+      if (!values.password) {
+        errors.password = "Password Required";
+      } else if (values.password.length < 4) {
+        errors.password = "Password must be at least 4 characters";
+      }
+    },
     onSubmit(values) {
       onSubmit?.(values);
     },
@@ -17,19 +27,25 @@ function MyForm({ onSubmit }: { onSubmit?: (values: any) => void }) {
 
   return (
     <form onSubmit={form.handleSubmit}>
-      <input
-        type="text"
-        aria-label="username"
-        name="username"
-        value={form.values.username}
-        onChange={form.handleChange("username")}
-      />
-      <input
-        type="password"
-        aria-label="password"
-        value={form.values.password}
-        onChange={form.handleChange("password")}
-      />
+      <div>
+        <input
+          type="text"
+          aria-label="username"
+          name="username"
+          value={form.values.username}
+          onChange={form.handleChange("username")}
+        />
+        {form.errors.username && <span>{form.errors.username}</span>}
+      </div>
+      <div>
+        <input
+          type="password"
+          aria-label="password"
+          value={form.values.password}
+          onChange={form.handleChange("password")}
+        />
+        {form.errors.password && <span>{form.errors.password}</span>}
+      </div>
       <button type="submit">Login</button>
     </form>
   );
@@ -78,5 +94,37 @@ describe("useForm", () => {
       username: "hello",
       password: "world",
     });
+  });
+
+  it("should validate before submit", () => {
+    const onSubmit = jest.fn();
+
+    const { getByLabelText, getByRole, getByText } = render(
+      <MyForm onSubmit={onSubmit} />,
+    );
+
+    const passwordInput = getByLabelText("password");
+
+    fireEvent.change(passwordInput, { target: { value: "www" } });
+
+    fireEvent.click(getByRole("button"));
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    // find error messages
+    expect(getByText("Username Required")).toBeInTheDocument();
+    expect(
+      getByText("Password must be at least 4 characters"),
+    ).toBeInTheDocument();
+  });
+
+  it("should validate on init", () => {
+    const { getByLabelText, getByText } = render(<MyForm />);
+
+    const passwordInput = getByLabelText("password");
+
+    expect(passwordInput).toHaveValue("");
+
+    expect(getByText("Username Required")).toBeInTheDocument();
+    expect(getByText("Password Required")).toBeInTheDocument();
   });
 });

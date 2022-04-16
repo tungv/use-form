@@ -5,9 +5,12 @@ type TextbaseElement =
   | HTMLSelectElement
   | HTMLTextAreaElement;
 
+type ValidationErrors<Values> = Partial<Record<keyof Values, string>>;
+
 interface FormConfig<Values> {
   initialValues: Values;
-  onSubmit: (values: Values) => void | Promise<void>;
+  onSubmit?: (values: Values) => void | Promise<void>;
+  validate?: (values: Values, errors: ValidationErrors<Values>) => void;
 }
 
 interface HandleChange<Values> {
@@ -16,12 +19,14 @@ interface HandleChange<Values> {
 
 interface UseFormResult<Values> {
   values: Values;
+  errors: ValidationErrors<Values>;
   handleChange: HandleChange<Values>;
   handleSubmit: (event?: React.FormEvent<HTMLFormElement>) => void;
 }
 
 interface FormState<Values> {
   values: Values;
+  errors: ValidationErrors<Values>;
 }
 
 type FormAction<Values> = {
@@ -33,27 +38,35 @@ type FormAction<Values> = {
 export default function useForm<Values>(
   config: FormConfig<Values>,
 ): UseFormResult<Values> {
+  const initialErrors = {};
+  config.validate?.(config.initialValues, initialErrors);
+
   const [state, dispatch] = useReducer(
     (state: FormState<Values>, action: FormAction<Values>) => {
       switch (action.type) {
         case "change":
+          const newValues = { ...state.values, [action.field]: action.value };
+
+          const errors = {} as ValidationErrors<Values>;
+          config.validate?.(newValues, errors);
+
           return {
             ...state,
-            values: {
-              ...state.values,
-              [action.field]: action.value,
-            },
+            values: newValues,
+            errors,
           };
       }
       return state;
     },
     {
       values: config.initialValues,
+      errors: initialErrors,
     },
   );
 
   return {
     values: state.values,
+    errors: state.errors,
     handleChange: (field) => (event) => {
       dispatch({
         type: "change",
@@ -65,7 +78,18 @@ export default function useForm<Values>(
       if (event) {
         event.preventDefault();
       }
-      config.onSubmit(state.values);
+
+      if (isEmpty(state.errors)) {
+        return;
+      }
+      config.onSubmit?.(state.values);
     },
   };
+}
+
+function isEmpty(values: object) {
+  for (const _field in values) {
+    return true;
+  }
+  return false;
 }
