@@ -41,6 +41,9 @@ type FormAction<Values> =
   | {
       type: "blur";
       field: keyof Values;
+    }
+  | {
+      type: "beforeSubmit";
     };
 
 export default function useForm<Values>(
@@ -74,6 +77,17 @@ export default function useForm<Values>(
             ...state,
             touched: { ...state.touched, [action.field]: true },
           };
+
+        case "beforeSubmit":
+          const touched = {} as Partial<Record<keyof Values, boolean>>;
+          for (const field in state.values) {
+            touched[field] = true;
+          }
+
+          return {
+            ...state,
+            touched,
+          };
       }
       return state;
     },
@@ -106,9 +120,12 @@ export default function useForm<Values>(
         event.preventDefault();
       }
 
+      dispatch({ type: "beforeSubmit" });
+
       if (isEmpty(state.errors)) {
         return;
       }
+
       config.onSubmit?.(state.values);
     },
   };

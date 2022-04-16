@@ -212,6 +212,11 @@ describe("useForm", () => {
       expect(getByText("Username Required")).toBeInTheDocument();
 
       expect(queryByText("Password Required")).toBeNull();
+
+      // submit form and expect error messages
+      fireEvent.click(getByText("Login"));
+      expect(getByText("Username Required")).toBeInTheDocument();
+      expect(getByText("Password Required")).toBeInTheDocument();
     });
   });
 });
