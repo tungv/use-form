@@ -20,20 +20,28 @@ interface HandleChange<Values> {
 interface UseFormResult<Values> {
   values: Values;
   errors: ValidationErrors<Values>;
+  touched: Partial<Record<keyof Values, boolean>>;
   handleChange: HandleChange<Values>;
+  handleBlur: (field: keyof Values) => () => void;
   handleSubmit: (event?: React.FormEvent<HTMLFormElement>) => void;
 }
 
 interface FormState<Values> {
   values: Values;
   errors: ValidationErrors<Values>;
+  touched: Partial<Record<keyof Values, boolean>>;
 }
 
-type FormAction<Values> = {
-  type: "change";
-  field: keyof Values;
-  value: string;
-};
+type FormAction<Values> =
+  | {
+      type: "change";
+      field: keyof Values;
+      value: string;
+    }
+  | {
+      type: "blur";
+      field: keyof Values;
+    };
 
 export default function useForm<Values>(
   config: FormConfig<Values>,
@@ -60,23 +68,37 @@ export default function useForm<Values>(
             values: newValues,
             errors,
           };
+
+        case "blur":
+          return {
+            ...state,
+            touched: { ...state.touched, [action.field]: true },
+          };
       }
       return state;
     },
     {
       values: config.initialValues,
       errors: initialErrorsRef.current,
+      touched: {},
     },
   );
 
   return {
     values: state.values,
     errors: state.errors,
+    touched: state.touched,
     handleChange: (field) => (event) => {
       dispatch({
         type: "change",
         field,
         value: event.target.value,
+      });
+    },
+    handleBlur: (field) => () => {
+      dispatch({
+        type: "blur",
+        field,
       });
     },
     handleSubmit: (event) => {
