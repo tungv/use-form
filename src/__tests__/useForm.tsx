@@ -4,16 +4,19 @@ import * as React from "react";
 
 import useForm from "../useForm";
 
-function MyForm() {
+function MyForm({ onSubmit }: { onSubmit?: (values: any) => void }) {
   const form = useForm({
     initialValues: {
       username: "",
       password: "",
     },
+    onSubmit(values) {
+      onSubmit?.(values);
+    },
   });
 
   return (
-    <form>
+    <form onSubmit={form.handleSubmit}>
       <input
         type="text"
         aria-label="username"
@@ -27,6 +30,7 @@ function MyForm() {
         value={form.values.password}
         onChange={form.handleChange("password")}
       />
+      <button type="submit">Login</button>
     </form>
   );
 }
@@ -53,5 +57,26 @@ describe("useForm", () => {
 
     fireEvent.change(passwordInput, { target: { value: "world" } });
     expect(passwordInput).toHaveValue("world");
+  });
+
+  it("should handle submit", () => {
+    const onSubmit = jest.fn();
+
+    const { getByLabelText, getByRole } = render(
+      <MyForm onSubmit={onSubmit} />,
+    );
+
+    const usernameInput = getByLabelText("username");
+    const passwordInput = getByLabelText("password");
+
+    fireEvent.change(usernameInput, { target: { value: "hello" } });
+    fireEvent.change(passwordInput, { target: { value: "world" } });
+
+    fireEvent.click(getByRole("button"));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      username: "hello",
+      password: "world",
+    });
   });
 });

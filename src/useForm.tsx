@@ -7,13 +7,17 @@ type TextbaseElement =
 
 interface FormConfig<Values> {
   initialValues: Values;
+  onSubmit: (values: Values) => void | Promise<void>;
+}
+
+interface HandleChange<Values> {
+  (field: keyof Values): (event: React.ChangeEvent<TextbaseElement>) => void;
 }
 
 interface UseFormResult<Values> {
   values: Values;
-  handleChange: (
-    field: keyof Values,
-  ) => (event: React.ChangeEvent<TextbaseElement>) => void;
+  handleChange: HandleChange<Values>;
+  handleSubmit: (event?: React.FormEvent<HTMLFormElement>) => void;
 }
 
 interface FormState<Values> {
@@ -56,6 +60,12 @@ export default function useForm<Values>(
         field,
         value: event.target.value,
       });
+    },
+    handleSubmit: (event) => {
+      if (event) {
+        event.preventDefault();
+      }
+      config.onSubmit(state.values);
     },
   };
 }
