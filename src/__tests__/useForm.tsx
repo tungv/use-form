@@ -127,4 +127,25 @@ describe("useForm", () => {
     expect(getByText("Username Required")).toBeInTheDocument();
     expect(getByText("Password Required")).toBeInTheDocument();
   });
+
+  it("should not run validate agaist initial values on update", () => {
+    const validate = jest.fn();
+
+    function TestForm() {
+      useForm({
+        initialValues: {
+          test: "value",
+        },
+        validate,
+      });
+
+      return <span>nothing</span>;
+    }
+
+    const { rerender } = render(<TestForm />);
+    expect(validate).toHaveBeenCalledTimes(1);
+
+    rerender(<TestForm />);
+    expect(validate).toHaveBeenCalledTimes(1);
+  });
 });

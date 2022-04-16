@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer, useRef } from "react";
 
 type TextbaseElement =
   | HTMLInputElement
@@ -38,8 +38,13 @@ type FormAction<Values> = {
 export default function useForm<Values>(
   config: FormConfig<Values>,
 ): UseFormResult<Values> {
-  const initialErrors = {};
-  config.validate?.(config.initialValues, initialErrors);
+  const initialErrorsRef = useRef<ValidationErrors<Values>>();
+  if (!initialErrorsRef.current) {
+    const initialErrors = {};
+    config.validate?.(config.initialValues, initialErrors);
+
+    initialErrorsRef.current = initialErrors;
+  }
 
   const [state, dispatch] = useReducer(
     (state: FormState<Values>, action: FormAction<Values>) => {
@@ -60,7 +65,7 @@ export default function useForm<Values>(
     },
     {
       values: config.initialValues,
-      errors: initialErrors,
+      errors: initialErrorsRef.current,
     },
   );
 
