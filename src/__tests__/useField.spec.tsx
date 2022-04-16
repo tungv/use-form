@@ -45,4 +45,25 @@ describe("useField", () => {
     fireEvent.change(input, { target: { value: "world" } });
     expect(input).toHaveValue("world");
   });
+
+  it("should work with select", () => {
+    function MyComponent() {
+      const { value, onChange } = useField("hello");
+
+      return (
+        <select value={value} onChange={onChange}>
+          <option value="hello">Hello</option>
+          <option value="world">World</option>
+        </select>
+      );
+    }
+
+    const { getByRole } = render(<MyComponent />);
+
+    const select = getByRole("combobox");
+    expect(select).toHaveValue("hello");
+
+    fireEvent.change(select, { target: { value: "world" } });
+    expect(select).toHaveValue("world");
+  });
 });
