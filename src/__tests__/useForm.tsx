@@ -75,77 +75,37 @@ describe("useForm", () => {
     expect(passwordInput).toHaveValue("world");
   });
 
-  it("should handle submit", () => {
-    const onSubmit = jest.fn();
+  describe("validation", () => {
+    it("should validate on init", () => {
+      const { getByLabelText, getByText } = render(<MyForm />);
 
-    const { getByLabelText, getByRole } = render(
-      <MyForm onSubmit={onSubmit} />,
-    );
+      const passwordInput = getByLabelText("password");
 
-    const usernameInput = getByLabelText("username");
-    const passwordInput = getByLabelText("password");
+      expect(passwordInput).toHaveValue("");
 
-    fireEvent.change(usernameInput, { target: { value: "hello" } });
-    fireEvent.change(passwordInput, { target: { value: "world" } });
-
-    fireEvent.click(getByRole("button"));
-
-    expect(onSubmit).toHaveBeenCalledWith({
-      username: "hello",
-      password: "world",
+      expect(getByText("Username Required")).toBeInTheDocument();
+      expect(getByText("Password Required")).toBeInTheDocument();
     });
-  });
 
-  it("should validate before submit", () => {
-    const onSubmit = jest.fn();
+    it("should not run validate agaist initial values on update", () => {
+      const validate = jest.fn();
 
-    const { getByLabelText, getByRole, getByText } = render(
-      <MyForm onSubmit={onSubmit} />,
-    );
+      function TestForm() {
+        useForm({
+          initialValues: {
+            test: "value",
+          },
+          validate,
+        });
 
-    const passwordInput = getByLabelText("password");
+        return <span>nothing</span>;
+      }
 
-    fireEvent.change(passwordInput, { target: { value: "www" } });
+      const { rerender } = render(<TestForm />);
+      expect(validate).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(getByRole("button"));
-    expect(onSubmit).not.toHaveBeenCalled();
-
-    // find error messages
-    expect(getByText("Username Required")).toBeInTheDocument();
-    expect(
-      getByText("Password must be at least 4 characters"),
-    ).toBeInTheDocument();
-  });
-
-  it("should validate on init", () => {
-    const { getByLabelText, getByText } = render(<MyForm />);
-
-    const passwordInput = getByLabelText("password");
-
-    expect(passwordInput).toHaveValue("");
-
-    expect(getByText("Username Required")).toBeInTheDocument();
-    expect(getByText("Password Required")).toBeInTheDocument();
-  });
-
-  it("should not run validate agaist initial values on update", () => {
-    const validate = jest.fn();
-
-    function TestForm() {
-      useForm({
-        initialValues: {
-          test: "value",
-        },
-        validate,
-      });
-
-      return <span>nothing</span>;
-    }
-
-    const { rerender } = render(<TestForm />);
-    expect(validate).toHaveBeenCalledTimes(1);
-
-    rerender(<TestForm />);
-    expect(validate).toHaveBeenCalledTimes(1);
+      rerender(<TestForm />);
+      expect(validate).toHaveBeenCalledTimes(1);
+    });
   });
 });
