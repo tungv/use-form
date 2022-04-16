@@ -31,6 +31,16 @@ export default function useForm<Values>(
 ): UseFormResult<Values> {
   const [state, dispatch] = useReducer(
     (state: FormState<Values>, action: FormAction<Values>) => {
+      switch (action.type) {
+        case "change":
+          return {
+            ...state,
+            values: {
+              ...state.values,
+              [action.field]: action.value,
+            },
+          };
+      }
       return state;
     },
     {
@@ -39,7 +49,7 @@ export default function useForm<Values>(
   );
 
   return {
-    values: config.initialValues,
+    values: state.values,
     handleChange: (field) => (event) => {
       dispatch({
         type: "change",
