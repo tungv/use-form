@@ -1,9 +1,9 @@
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import * as React from "react";
 import useForm from "../useForm";
 
-function MyForm({ onSubmit }: { onSubmit?: (values: any) => void }) {
+function MyForm({ onSubmit }: { onSubmit: (values: any) => Promise<void> }) {
   const form = useForm({
     initialValues: {
       username: "",
@@ -19,8 +19,8 @@ function MyForm({ onSubmit }: { onSubmit?: (values: any) => void }) {
         errors.password = "Password must be at least 4 characters";
       }
     },
-    onSubmit(values) {
-      onSubmit?.(values);
+    async onSubmit(values) {
+      await onSubmit(values);
     },
   });
 
@@ -45,14 +45,17 @@ function MyForm({ onSubmit }: { onSubmit?: (values: any) => void }) {
         />
         {form.errors.password && <span>{form.errors.password}</span>}
       </div>
-      <button type="submit">Login</button>
+      <button type="submit" disabled={form.isSubmitting}>
+        {form.isSubmitting ? "Logging in" : "Login"}
+      </button>
     </form>
   );
 }
+
 describe("useForm", () => {
   describe("handleSubmit", () => {
-    it("should handle submit", () => {
-      const onSubmit = jest.fn();
+    it("should handle submit", async () => {
+      const onSubmit = jest.fn(() => Promise.resolve());
 
       const { getByLabelText, getByRole } = render(
         <MyForm onSubmit={onSubmit} />,
@@ -60,15 +63,24 @@ describe("useForm", () => {
 
       const usernameInput = getByLabelText("username");
       const passwordInput = getByLabelText("password");
+      const submitButton = getByRole("button");
 
       fireEvent.change(usernameInput, { target: { value: "hello" } });
       fireEvent.change(passwordInput, { target: { value: "world" } });
 
-      fireEvent.click(getByRole("button"));
+      fireEvent.click(submitButton);
+
+      expect(submitButton).toHaveTextContent("Logging in");
+      expect(submitButton).toBeDisabled();
 
       expect(onSubmit).toHaveBeenCalledWith({
         username: "hello",
         password: "world",
+      });
+
+      await waitFor(() => {
+        expect(submitButton).toHaveTextContent("Login");
+        expect(submitButton).not.toBeDisabled();
       });
     });
 

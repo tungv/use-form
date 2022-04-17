@@ -21,6 +21,7 @@ interface UseFormResult<Values> {
   values: Values;
   errors: ValidationErrors<Values>;
   touched: Partial<Record<keyof Values, boolean>>;
+  isSubmitting: boolean;
   handleChange: HandleChange<Values>;
   handleBlur: (field: keyof Values) => () => void;
   handleSubmit: (event?: React.FormEvent<HTMLFormElement>) => void;
@@ -30,6 +31,7 @@ interface FormState<Values> {
   values: Values;
   errors: ValidationErrors<Values>;
   touched: Partial<Record<keyof Values, boolean>>;
+  isSubmitting: boolean;
 }
 
 type FormAction<Values> =
@@ -44,6 +46,9 @@ type FormAction<Values> =
     }
   | {
       type: "beforeSubmit";
+    }
+  | {
+      type: "afterSubmit";
     };
 
 export default function useForm<Values>(
@@ -87,6 +92,13 @@ export default function useForm<Values>(
           return {
             ...state,
             touched,
+            isSubmitting: true,
+          };
+
+        case "afterSubmit":
+          return {
+            ...state,
+            isSubmitting: false,
           };
       }
       return state;
@@ -95,6 +107,7 @@ export default function useForm<Values>(
       values: config.initialValues,
       errors: initialErrorsRef.current,
       touched: {},
+      isSubmitting: false,
     },
   );
 
@@ -102,6 +115,7 @@ export default function useForm<Values>(
     values: state.values,
     errors: state.errors,
     touched: state.touched,
+    isSubmitting: state.isSubmitting,
     handleChange: (field) => (event) => {
       dispatch({
         type: "change",
@@ -126,7 +140,9 @@ export default function useForm<Values>(
         return;
       }
 
-      config.onSubmit?.(state.values);
+      config.onSubmit?.(state.values)?.then(() => {
+        dispatch({ type: "afterSubmit" });
+      });
     },
   };
 }
