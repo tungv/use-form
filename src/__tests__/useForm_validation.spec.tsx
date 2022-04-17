@@ -52,26 +52,37 @@ function MyForm({ onSubmit }: { onSubmit?: (values: any) => void }) {
 }
 
 describe("useForm", () => {
-  it("should render multiple fields", () => {
-    const { getByLabelText } = render(<MyForm />);
+  describe("validation", () => {
+    it("should validate on init", () => {
+      const { getByLabelText, getByText } = render(<MyForm />);
 
-    expect(getByLabelText("username")).toHaveValue("");
-    expect(getByLabelText("password")).toHaveValue("");
-  });
+      const passwordInput = getByLabelText("password");
 
-  it("should update values on input change", () => {
-    const { getByLabelText } = render(<MyForm />);
+      expect(passwordInput).toHaveValue("");
 
-    const usernameInput = getByLabelText("username");
-    const passwordInput = getByLabelText("password");
+      expect(getByText("Username Required")).toBeInTheDocument();
+      expect(getByText("Password Required")).toBeInTheDocument();
+    });
 
-    expect(usernameInput).toHaveValue("");
-    expect(passwordInput).toHaveValue("");
+    it("should not run validate agaist initial values on update", () => {
+      const validate = jest.fn();
 
-    fireEvent.change(usernameInput, { target: { value: "hello" } });
-    expect(usernameInput).toHaveValue("hello");
+      function TestForm() {
+        useForm({
+          initialValues: {
+            test: "value",
+          },
+          validate,
+        });
 
-    fireEvent.change(passwordInput, { target: { value: "world" } });
-    expect(passwordInput).toHaveValue("world");
+        return <span>nothing</span>;
+      }
+
+      const { rerender } = render(<TestForm />);
+      expect(validate).toHaveBeenCalledTimes(1);
+
+      rerender(<TestForm />);
+      expect(validate).toHaveBeenCalledTimes(1);
+    });
   });
 });
