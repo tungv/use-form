@@ -55,14 +55,6 @@ type FormAction<Values> =
 export default function useForm<Values>(
   config: FormConfig<Values>,
 ): UseFormResult<Values> {
-  const initialErrorsRef = useRef<ValidationErrors<Values>>();
-  if (!initialErrorsRef.current) {
-    const initialErrors = {};
-    config.validate?.(config.initialValues, initialErrors);
-
-    initialErrorsRef.current = initialErrors;
-  }
-
   const [state, dispatch] = useReducer(
     (state: FormState<Values>, action: FormAction<Values>) => {
       switch (action.type) {
@@ -104,11 +96,17 @@ export default function useForm<Values>(
       }
       return state;
     },
-    {
-      values: config.initialValues,
-      errors: initialErrorsRef.current,
-      touched: {},
-      isSubmitting: false,
+    config.initialValues,
+    (values: Values): FormState<Values> => {
+      const errors = {} as ValidationErrors<Values>;
+      config.validate?.(values, errors);
+
+      return {
+        values,
+        errors,
+        touched: {},
+        isSubmitting: false,
+      };
     },
   );
 
