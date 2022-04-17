@@ -74,4 +74,54 @@ describe("useForm", () => {
     fireEvent.change(passwordInput, { target: { value: "world" } });
     expect(passwordInput).toHaveValue("world");
   });
+
+  it("should update values if handleChange is called", () => {
+    function MyControlledForm() {
+      const form = useForm({
+        initialValues: {
+          username: "",
+          password: "",
+        },
+      });
+
+      return (
+        <form onSubmit={form.handleSubmit}>
+          <input
+            type="text"
+            aria-label="username"
+            name="username"
+            value={form.values.username}
+            onChange={form.handleChange("username")}
+          />
+          <input
+            type="password"
+            aria-label="password"
+            value={form.values.password}
+            onChange={form.handleChange("password")}
+          />
+          <button
+            onClick={() => {
+              form.setField("username", "tung");
+            }}
+          >
+            Set Name
+          </button>
+        </form>
+      );
+    }
+
+    const { getByLabelText, getByText } = render(<MyControlledForm />);
+
+    const usernameInput = getByLabelText("username");
+    const passwordInput = getByLabelText("password");
+    const setNameButton = getByText("Set Name");
+
+    expect(usernameInput).toHaveValue("");
+    expect(passwordInput).toHaveValue("");
+
+    fireEvent.click(setNameButton);
+
+    expect(usernameInput).toHaveValue("tung");
+    expect(passwordInput).toHaveValue("");
+  });
 });

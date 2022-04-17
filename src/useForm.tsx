@@ -25,6 +25,7 @@ interface UseFormResult<Values> {
   handleChange: HandleChange<Values>;
   handleBlur: (field: keyof Values) => () => void;
   handleSubmit: (event?: React.FormEvent<HTMLFormElement>) => void;
+  setField: (field: keyof Values, value: string) => void;
 }
 
 interface FormState<Values> {
@@ -142,6 +143,13 @@ export default function useForm<Values>(
 
       config.onSubmit?.(state.values)?.then(() => {
         dispatch({ type: "afterSubmit" });
+      });
+    },
+    setField: (field, value) => {
+      dispatch({
+        type: "change",
+        field,
+        value,
       });
     },
   };
